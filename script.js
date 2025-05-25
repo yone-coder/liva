@@ -1,234 +1,138 @@
-// Helper / Utility functions
-let current_customer_id;
-let order_id;
-let script_to_head = (attributes_object) => {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      for (const name of Object.keys(attributes_object)) {
-        script.setAttribute(name, attributes_object[name]);
-      }
-      document.head.appendChild(script);
-      script.addEventListener('load', resolve);
-      script.addEventListener('error', reject);
-    });
-}
-let reset_purchase_button = () => {
-    document.querySelector("#card-form").querySelector("input[type='submit']").removeAttribute("disabled");
-    document.querySelector("#card-form").querySelector("input[type='submit']").value = "Purchase";
-}
+# PayPal Integration - Backend & Frontend Separation
 
-const is_user_logged_in = () => {
-  return new Promise((resolve) => {
-    customer_id = localStorage.getItem("logged_in_user_id") || "";
-    resolve();
-  });
-}
+This project separates the PayPal integration into a backend API server (to be deployed on Render.com) and a frontend that calls the backend APIs.
 
-const get_client_token = () => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const response = await fetch("http://localhost:3000/get_client_token", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "customer_id": current_customer_id }),
-      });
+## Backend Setup (Render.com)
 
-      const client_token = await response.text();
-      resolve(client_token);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-let handle_close = (event) => {
-    event.target.closest(".ms-alert").remove();
-}
-let handle_click = (event) => {
-    if (event.target.classList.contains("ms-close")) {
-        handle_close(event);
-    }
-}
-document.addEventListener("click", handle_click);
-const paypal_sdk_url = "https://www.paypal.com/sdk/js";
-const client_id = "REPLACE_WITH_YOUR_CLIENT_ID";
-const currency = "USD";
-const intent = "capture";
+### 1. Files Structure
+```
+backend/
+├── server.js
+├── package.json
+├── .env
+└── README.md
+```
 
-let display_error_alert = () => {
-    document.getElementById("alerts").innerHTML = `<div class="ms-alert ms-action2 ms-small"><span class="ms-close"></span><p>An Error Ocurred! (View console for more info)</p>  </div>`;
-}
-let display_success_message = (object) => {
-    order_details = object.order_details;
-    paypal_buttons = object.paypal_buttons;
-    console.log(order_details); //https://developer.paypal.com/docs/api/orders/v2/#orders_capture!c=201&path=create_time&t=response
-    let intent_object = intent === "authorize" ? "authorizations" : "captures";
-    //Custom Successful Message
-    document.getElementById("alerts").innerHTML = `<div class=\'ms-alert ms-action\'>Thank you ` + (order_details?.payer?.name?.given_name || ``) + ` ` + (order_details?.payer?.name?.surname || ``) + ` for your payment of ` + order_details.purchase_units[0].payments[intent_object][0].amount.value + ` ` + order_details.purchase_units[0].payments[intent_object][0].amount.currency_code + `!</div>`;
+### 2. Environment Variables on Render.com
+Set these environment variables in your Render.com dashboard:
 
-    //Close out the PayPal buttons that were rendered
-    paypal_buttons.close();
-    document.getElementById("card-form").classList.add("hide");
-}
+```bash
+CLIENT_ID=your_paypal_client_id_here
+CLIENT_SECRET=your_paypal_client_secret_here
+ENVIRONMENT=sandbox
+SENDGRID_API_KEY=your_sendgrid_api_key_here (optional)
+FROM_EMAIL=your_from_email@domain.com (optional)
+FRONTEND_URL=https://your-frontend-domain.com
+```
 
-//PayPal Code
-is_user_logged_in()
-.then(() => {
-    return get_client_token();
-})
-.then((client_token) => {
-    //https://developer.paypal.com/sdk/js/configuration/#link-queryparameters
-    return script_to_head({"src": paypal_sdk_url + "?client-id=" + client_id + "&enable-funding=venmo&currency=" + currency + "&intent=" + intent + "&components=buttons,hosted-fields", "data-client-token": client_token}) //https://developer.paypal.com/sdk/js/configuration/#link-configureandcustomizeyourintegration
-})
-.then(() => {
-    //Handle loading spinner
-    document.getElementById("loading").classList.add("hide");
-    document.getElementById("content").classList.remove("hide");
-    let paypal_buttons = paypal.Buttons({ // https://developer.paypal.com/sdk/js/reference
-        onClick: (data) => { // https://developer.paypal.com/sdk/js/reference/#link-oninitonclick
-            //Custom JS here
-        },
-        style: { //https://developer.paypal.com/sdk/js/reference/#link-style
-            shape: 'rect',
-            color: 'gold',
-            layout: 'vertical',
-            label: 'paypal'
-        },
+### 3. Deploy to Render.com
 
-        createOrder: function(data, actions) { //https://developer.paypal.com/docs/api/orders/v2/#orders_create
-            return fetch("http://localhost:3000/create_order", {
-                method: "post", headers: { "Content-Type": "application/json; charset=utf-8" },
-                body: JSON.stringify({ "intent": intent })
-            })
-            .then((response) => response.json())
-            .then((order) => { return order.id; });
-        },
+1. **Create a new Web Service** on Render.com
+2. **Connect your GitHub repository**
+3. **Configure the service:**
+   - **Name:** `paypal-backend`
+   - **Environment:** `Node`
+   - **Region:** Choose your preferred region
+   - **Branch:** `main` (or your default branch)
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
 
-        onApprove: function(data, actions) {
-            order_id = data.orderID;
-            console.log(data);
-            return fetch("http://localhost:3000/complete_order", {
-                method: "post", headers: { "Content-Type": "application/json; charset=utf-8" },
-                body: JSON.stringify({
-                    "intent": intent,
-                    "order_id": order_id
-                })
-            })
-            .then((response) => response.json())
-            .then((order_details) => {
-                display_success_message({"order_details": order_details, "paypal_buttons": paypal_buttons});
-             })
-             .catch((error) => {
-                console.log(error);
-                display_error_alert()
-             });
-        },
+4. **Add environment variables** in the Render dashboard
+5. **Deploy** the service
 
-        onCancel: function (data) {
-            document.getElementById("alerts").innerHTML = `<div class="ms-alert ms-action2 ms-small"><span class="ms-close"></span><p>Order cancelled!</p>  </div>`;
-        },
+### 4. Backend API Endpoints
 
-        onError: function(err) {
-            console.log(err);
-        }
-    });
-    paypal_buttons.render('#payment_options');
-    //Hosted Fields
-    if (paypal.HostedFields.isEligible()) {
-        // Renders card fields
-        paypal_hosted_fields = paypal.HostedFields.render({
-          // Call your server to set up the transaction
-          createOrder: () => {
-            return fetch("http://localhost:3000/create_order", {
-                method: "post", headers: { "Content-Type": "application/json; charset=utf-8" },
-                body: JSON.stringify({ "intent": intent })
-            })
-            .then((response) => response.json())
-            .then((order) => { order_id = order.id; return order.id; });
-          },
-          styles: {
-            '.valid': {
-              color: 'green'
-            },
-            '.invalid': {
-              color: 'red'
-            },
-            'input': {
-                'font-size': '16pt',
-                'color': '#ffffff'
-            },
-          },
-          fields: {
-            number: {
-              selector: "#card-number",
-              placeholder: "4111 1111 1111 1111"
-            },
-            cvv: {
-              selector: "#cvv",
-              placeholder: "123"
-            },
-            expirationDate: {
-              selector: "#expiration-date",
-              placeholder: "MM/YY"
-            }
-          }
-        }).then((card_fields) => {
-         document.querySelector("#card-form").addEventListener("submit", (event) => {
-            event.preventDefault();
-            document.querySelector("#card-form").querySelector("input[type='submit']").setAttribute("disabled", "");
-            document.querySelector("#card-form").querySelector("input[type='submit']").value = "Loading...";
-            card_fields
-              .submit(
-                //Customer Data BEGIN
-                //This wasn't part of the video guide originally, but I've included it here
-                //So you can reference how you could send customer data, which may
-                //be a requirement of your project to pass this info to card issuers
-                {
-                  // Cardholder's first and last name
-                  cardholderName: "Raúl Uriarte, Jr.",
-                  // Billing Address
-                  billingAddress: {
-                    // Street address, line 1
-                    streetAddress: "123 Springfield Rd",
-                    // Street address, line 2 (Ex: Unit, Apartment, etc.)
-                    extendedAddress: "",
-                    // State
-                    region: "AZ",
-                    // City
-                    locality: "CHANDLER",
-                    // Postal Code
-                    postalCode: "85224",
-                    // Country Code
-                    countryCodeAlpha2: "US",
-                  },
-                }
-                //Customer Data END
-              )
-              .then(() => {
-                return fetch("http://localhost:3000/complete_order", {
-                    method: "post", headers: { "Content-Type": "application/json; charset=utf-8" },
-                    body: JSON.stringify({
-                        "intent": intent,
-                        "order_id": order_id,
-                        "email": document.getElementById("email").value
-                    })
-                })
-                .then((response) => response.json())
-                .then((order_details) => {
-                    display_success_message({"order_details": order_details, "paypal_buttons": paypal_buttons});
-                 })
-                 .catch((error) => {
-                    console.log(error);
-                    display_error_alert();
-                 });
-              })
-              .catch((err) => {
-                console.log(err);
-                reset_purchase_button();
-                display_error_alert();
-              });
-          });
-        });
-      }
-})
-.catch((error) => {
-    reset_purchase_button();
-});
+Once deployed, your backend will have these endpoints:
+
+- `GET /health` - Health check
+- `POST /api/get_client_token` - Get PayPal client token
+- `POST /api/create_order` - Create PayPal order
+- `POST /api/complete_order` - Complete PayPal order
+
+## Frontend Setup
+
+### 1. Update Configuration
+
+In the frontend `index.html`, update the `CONFIG` object:
+
+```javascript
+const CONFIG = {
+  BACKEND_URL: 'https://your-render-app-name.onrender.com', // Your Render.com backend URL
+  PAYPAL_CLIENT_ID: 'YOUR_PAYPAL_CLIENT_ID', // Your PayPal client ID
+  CURRENCY: 'USD',
+  INTENT: 'capture'
+};
+```
+
+### 2. Deploy Frontend
+
+You can deploy the frontend to:
+- **Netlify** (drag & drop the HTML file)
+- **Vercel** 
+- **GitHub Pages**
+- **Any static hosting service**
+
+### 3. Update CORS Settings
+
+After deploying the frontend, update the `FRONTEND_URL` environment variable in your Render.com backend to match your frontend domain.
+
+## PayPal Configuration
+
+### 1. Get PayPal Credentials
+
+1. Go to [PayPal Developer](https://developer.paypal.com/)
+2. Log in to your account
+3. Create a new app or use an existing one
+4. Copy the **Client ID** and **Client Secret**
+
+### 2. Sandbox vs Live
+
+- **Sandbox:** Use `sandbox` for testing
+- **Live:** Use `live` for production
+
+Set the `ENVIRONMENT` variable accordingly.
+
+## SendGrid Configuration (Optional)
+
+If you want to send email receipts:
+
+1. Sign up for [SendGrid](https://sendgrid.com/)
+2. Create an API key
+3. Set the `SENDGRID_API_KEY` environment variable
+4. Set the `FROM_EMAIL` environment variable
+
+## Testing
+
+### 1. Test Backend Endpoints
+
+```bash
+# Health check
+curl https://your-app.onrender.com/health
+
+# Get client token
+curl -X POST https://your-app.onrender.com/api/get_client_token \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": ""}'
+```
+
+### 2. Test Frontend
+
+1. Open your deployed frontend URL
+2. The PayPal buttons should load
+3. Test with PayPal sandbox credentials
+4. Check the browser console for any errors
+
+## Troubleshooting
+
+### Common Issues
+
+1. **CORS Errors**
+   - Make sure `FRONTEND_URL` is set correctly in backend
+   - Check that your frontend domain matches the CORS configuration
+
+2. **PayPal SDK Not Loading**
+   - Verify your `PAYPAL_CLIENT_ID` is correct
+   - Check browser console for errors
+   - Ensure you're using the correct sandbox/live environment
+
+3. **Backend API
