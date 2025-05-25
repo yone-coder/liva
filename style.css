@@ -1,44 +1,411 @@
-.hide {
-    display:none !important;
-}
-.spinner-container {
-    width: 100px;
-    height: 100px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PPCP Advanced - NFT Purchase</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/minstyle.io@2.0.1/dist/css/minstyle.io.min.css">
+    <style>
+      .hide {
+        display: none !important;
+      }
+      
+      .spinner-container {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
 
-.div_input {
-  display: inline-block;
-  height: 40px;
-  width: 100%;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-  -webkit-box-shadow: none;
-  box-shadow: none;
-  font-size: 0.98rem;
-  background-color: rgba(var(--main-bg), 1);
-  border: 2px solid rgba(var(--default-border-color), 1);
-  border-radius: var(--default-border-radius);
-  margin: 0;
-  padding: 0 0.8rem;
-}
+      .div_input {
+        display: inline-block;
+        height: 40px;
+        width: 100%;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+        font-size: 0.98rem;
+        background-color: rgba(var(--main-bg), 1);
+        border: 2px solid rgba(var(--default-border-color), 1);
+        border-radius: var(--default-border-radius);
+        margin: 0;
+        padding: 0 0.8rem;
+      }
 
-.spinner {
-    border: 8px solid rgba(0, 0, 0, 0.1);
-    border-top-color: lightblue;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s ease-in-out infinite;
-}
+      .spinner {
+        border: 8px solid rgba(0, 0, 0, 0.1);
+        border-top-color: lightblue;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s ease-in-out infinite;
+      }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .nft-image {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        border-radius: 8px;
+      }
+
+      .error-message {
+        color: #ff6b6b;
+        background-color: rgba(255, 107, 107, 0.1);
+        border: 1px solid #ff6b6b;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+      }
+
+      .success-message {
+        color: #51cf66;
+        background-color: rgba(81, 207, 102, 0.1);
+        border: 1px solid #51cf66;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm"></div>
+        <div class="col-sm">
+          <h2 class="ms-text-center">AI-Generated NFT Bored Ape</h2>
+          <div class="ms-text-center pb-2">
+            <div class="ms-label ms-large ms-action2 ms-light">$100.00 USD</div>
+          </div>
+          
+          <div id="alerts" class="ms-text-center"></div>
+          
+          <div id="loading" class="spinner-container ms-div-center">
+            <div class="spinner"></div>
+            <p style="margin-left: 20px;">Loading PayPal...</p>
+          </div>
+          
+          <div id="content" class="hide">
+            <div class="ms-card ms-fill">
+              <div class="ms-card-content ms-text-center">
+                <img src="https://cdn.discordapp.com/attachments/1060825015681028127/1076385063903694908/rauljr7_3d_e83fed6a-69aa-4a6a-b0ec-928edd57aecf.png" 
+                     alt="NFT Bored Ape" class="nft-image">
+              </div>
+            </div>
+            
+            <div id="payment_options">
+              <!-- PayPal buttons will be rendered here -->
+            </div>
+            
+            <hr><hr>
+            
+            <div id="card-payment-section">
+              <form class="row ms-form-group" id="card-form">
+                <div class="col-12 mb-2">
+                  <label for="card-number">Card Number</label>
+                  <div class="div_input" id="card-number"></div>
+                </div>
+                <div class="col-md mb-2">
+                  <label for="expiration-date">Expiration Date</label>
+                  <div id="expiration-date" class="div_input"></div>
+                </div>
+                <div class="col-md mb-2">
+                  <label for="cvv">Security Code</label>
+                  <div id="cvv" class="div_input"></div>
+                </div>
+                <div class="col-12 mb-2">
+                  <label for="email">Email</label>
+                  <input value="" placeholder="username@email.com" type="email" id="email" class="div_input" required>
+                </div>
+                <div class="col-12">
+                  <input class="ms-fullwidth mt-2 ms-medium" type="submit" value="Purchase with Card">
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm"></div>
+      </div>
+      
+      <footer style="margin-top:50px" class="ms-footer">
+        <div class="ms-text-center">
+          <p>Secure payments powered by PayPal</p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Configuration - Update these values
+      const CONFIG = {
+        BACKEND_URL: 'http://localhost:3000', // Change this to your Render.com backend URL
+        PAYPAL_CLIENT_ID: 'REPLACE_WITH_YOUR_CLIENT_ID', // Your PayPal client ID
+        CURRENCY: 'USD',
+        INTENT: 'capture'
+      };
+
+      // Global variables
+      let currentCustomerId = '';
+      let orderId = '';
+      let paypalButtons = null;
+      let hostedFields = null;
+
+      // Utility functions
+      const displayError = (message = 'An error occurred! Please try again.') => {
+        document.getElementById("alerts").innerHTML = `
+          <div class="error-message">
+            <span onclick="this.parentElement.remove()" style="float: right; cursor: pointer;">&times;</span>
+            <p>${message}</p>
+          </div>`;
+      };
+
+      const displaySuccess = (orderDetails) => {
+        const intentObject = CONFIG.INTENT === "authorize" ? "authorizations" : "captures";
+        const payment = orderDetails.purchase_units[0].payments[intentObject][0];
+        const payerName = orderDetails.payer?.name ? 
+          `${orderDetails.payer.name.given_name || ''} ${orderDetails.payer.name.surname || ''}`.trim() : 
+          'Customer';
+
+        document.getElementById("alerts").innerHTML = `
+          <div class="success-message">
+            <h3>Payment Successful!</h3>
+            <p>Thank you ${payerName} for your payment of ${payment.amount.value} ${payment.amount.currency_code}!</p>
+            <p>Transaction ID: ${orderDetails.id}</p>
+          </div>`;
+
+        // Hide payment options
+        if (paypalButtons) paypalButtons.close();
+        document.getElementById("card-form").classList.add("hide");
+        document.getElementById("payment_options").classList.add("hide");
+      };
+
+      const resetPurchaseButton = () => {
+        const submitBtn = document.querySelector("#card-form input[type='submit']");
+        if (submitBtn) {
+          submitBtn.removeAttribute("disabled");
+          submitBtn.value = "Purchase with Card";
+        }
+      };
+
+      const loadScript = (src, attributes = {}) => {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          
+          Object.keys(attributes).forEach(key => {
+            script.setAttribute(key, attributes[key]);
+          });
+          
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      };
+
+      // API calls
+      const getClientToken = async () => {
+        try {
+          const response = await fetch(`${CONFIG.BACKEND_URL}/api/get_client_token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_id: currentCustomerId })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          return data.client_token;
+        } catch (error) {
+          console.error('Error getting client token:', error);
+          throw error;
+        }
+      };
+
+      const createOrder = async () => {
+        try {
+          const response = await fetch(`${CONFIG.BACKEND_URL}/api/create_order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ intent: CONFIG.INTENT })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const order = await response.json();
+          return order.id;
+        } catch (error) {
+          console.error('Error creating order:', error);
+          throw error;
+        }
+      };
+
+      const completeOrder = async (orderIdToComplete, email = '') => {
+        try {
+          const response = await fetch(`${CONFIG.BACKEND_URL}/api/complete_order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              intent: CONFIG.INTENT,
+              order_id: orderIdToComplete,
+              email: email
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          return await response.json();
+        } catch (error) {
+          console.error('Error completing order:', error);
+          throw error;
+        }
+      };
+
+      // Initialize PayPal
+      const initializePayPal = async () => {
+        try {
+          // Check if user is logged in (you can modify this logic)
+          currentCustomerId = localStorage.getItem("logged_in_user_id") || "";
+
+          // Get client token
+          const clientToken = await getClientToken();
+
+          // Load PayPal SDK
+          const paypalSdkUrl = `https://www.paypal.com/sdk/js?client-id=${CONFIG.PAYPAL_CLIENT_ID}&enable-funding=venmo&currency=${CONFIG.CURRENCY}&intent=${CONFIG.INTENT}&components=buttons,hosted-fields`;
+          
+          await loadScript(paypalSdkUrl, { 'data-client-token': clientToken });
+
+          // Hide loading, show content
+          document.getElementById("loading").classList.add("hide");
+          document.getElementById("content").classList.remove("hide");
+
+          // Initialize PayPal Buttons
+          paypalButtons = paypal.Buttons({
+            style: {
+              shape: 'rect',
+              color: 'gold',
+              layout: 'vertical',
+              label: 'paypal'
+            },
+
+            createOrder: createOrder,
+
+            onApprove: async (data, actions) => {
+              try {
+                orderId = data.orderID;
+                const orderDetails = await completeOrder(orderId);
+                displaySuccess(orderDetails);
+              } catch (error) {
+                console.error('Payment approval error:', error);
+                displayError('Payment processing failed. Please try again.');
+              }
+            },
+
+            onCancel: (data) => {
+              displayError('Payment was cancelled.');
+            },
+
+            onError: (err) => {
+              console.error('PayPal error:', err);
+              displayError('A payment error occurred. Please try again.');
+            }
+          });
+
+          paypalButtons.render('#payment_options');
+
+          // Initialize Hosted Fields (Credit Card)
+          if (paypal.HostedFields.isEligible()) {
+            hostedFields = await paypal.HostedFields.render({
+              createOrder: async () => {
+                orderId = await createOrder();
+                return orderId;
+              },
+              
+              styles: {
+                '.valid': { color: 'green' },
+                '.invalid': { color: 'red' },
+                'input': {
+                  'font-size': '16pt',
+                  'color': '#ffffff'
+                }
+              },
+              
+              fields: {
+                number: {
+                  selector: "#card-number",
+                  placeholder: "4111 1111 1111 1111"
+                },
+                cvv: {
+                  selector: "#cvv",
+                  placeholder: "123"
+                },
+                expirationDate: {
+                  selector: "#expiration-date",
+                  placeholder: "MM/YY"
+                }
+              }
+            });
+
+            // Handle card form submission
+            document.querySelector("#card-form").addEventListener("submit", async (event) => {
+              event.preventDefault();
+              
+              const submitBtn = event.target.querySelector("input[type='submit']");
+              submitBtn.setAttribute("disabled", "");
+              submitBtn.value = "Processing...";
+
+              try {
+                await hostedFields.submit({
+                  cardholderName: "John Doe", // You can make this dynamic
+                  billingAddress: {
+                    streetAddress: "123 Main St",
+                    extendedAddress: "",
+                    region: "CA",
+                    locality: "San Jose",
+                    postalCode: "95131",
+                    countryCodeAlpha2: "US"
+                  }
+                });
+
+                const email = document.getElementById("email").value;
+                const orderDetails = await completeOrder(orderId, email);
+                displaySuccess(orderDetails);
+                
+              } catch (error) {
+                console.error('Card payment error:', error);
+                displayError('Card payment failed. Please check your information and try again.');
+                resetPurchaseButton();
+              }
+            });
+          } else {
+            // Hide card form if hosted fields not available
+            document.getElementById("card-payment-section").style.display = 'none';
+          }
+
+        } catch (error) {
+          console.error('PayPal initialization error:', error);
+          document.getElementById("loading").classList.add("hide");
+          displayError('Failed to load payment options. Please refresh the page and try again.');
+        }
+      };
+
+      // Initialize when page loads
+      document.addEventListener('DOMContentLoaded', initializePayPal);
+    </script>
+  </body>
+</html>
